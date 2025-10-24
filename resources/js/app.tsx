@@ -16,6 +16,7 @@ import BulkScanSerialNumbers from './pages/BulkScanSerialNumbers';
 import BulkScanSerialNumbersGeneral from './pages/BulkScanSerialNumbersGeneral';
 import Computers from './pages/Computers';
 import Borrowings from './pages/Borrowings';
+import Reports from './pages/Reports';
 import Users from './pages/Users';
 import Roles from './pages/Roles';
 import AuditLogs from './pages/AuditLogs';
@@ -64,6 +65,7 @@ function App() {
               <Route path="serial-numbers/bulk-scan" element={<PermissionGuard permission="update assets"><BulkScanSerialNumbersGeneral /></PermissionGuard>} />
               <Route path="computers" element={<PermissionGuard permission="view computers"><Computers /></PermissionGuard>} />
               <Route path="borrowings" element={<PermissionGuard permission="view borrowings"><Borrowings /></PermissionGuard>} />
+              <Route path="reports" element={<PermissionGuard permission="view reports"><Reports /></PermissionGuard>} />
               <Route path="users" element={<PermissionGuard permission="view users"><Users /></PermissionGuard>} />
               <Route path="roles" element={<PermissionGuard permission="view users"><Roles /></PermissionGuard>} />
               <Route path="audit-logs" element={<PermissionGuard permission="view logs"><AuditLogs /></PermissionGuard>} />

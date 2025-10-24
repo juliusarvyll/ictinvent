@@ -11,6 +11,7 @@ import {
   Hash,
   LogOut,
   Menu,
+  BarChart3,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
@@ -34,6 +35,7 @@ export default function Layout() {
     { icon: Hash, label: 'Serial Numbers', path: '/serial-numbers', permission: 'view assets' },
     { icon: Computer, label: 'Computers', path: '/computers', permission: 'view computers' },
     { icon: FileText, label: 'Borrowings', path: '/borrowings', permission: 'view borrowings' },
+    { icon: BarChart3, label: 'Reports', path: '/reports', permission: 'view reports' },
     { icon: Users, label: 'Users', path: '/users', permission: 'view users' },
     { icon: Shield, label: 'Roles', path: '/roles', permission: 'view users' },
     { icon: FileText, label: 'Audit Logs', path: '/audit-logs', permission: 'view logs' },

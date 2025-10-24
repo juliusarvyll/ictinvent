@@ -20,12 +20,23 @@ class ComputerController extends Controller
     
     public function index(Request $request)
     {
+        $user = auth()->user();
         $query = Computer::query()->with(['assetSerial.asset', 'peripherals.assetSerialNumber.asset.category', 'department']);
 
-        // For borrowing purposes, show computers from all departments
-        // Only filter by department if specifically requested
-        if ($request->has('department_id')) {
-            $query->where('department_id', $request->department_id);
+        // Department-based access control
+        if (!$user->hasRole('super-admin') && !$user->can('view all departments')) {
+            // Regular users can only see computers from their own department
+            if (!$user->department_id) {
+                return response()->json([
+                    'message' => 'Access denied. You must be assigned to a department to view computers.'
+                ], 403);
+            }
+            $query->where('department_id', $user->department_id);
+        } else {
+            // Admins can filter by specific department if requested
+            if ($request->has('department_id') && $request->department_id) {
+                $query->where('department_id', $request->department_id);
+            }
         }
 
         if ($request->has('search')) {
@@ -34,10 +45,6 @@ class ComputerController extends Controller
                   ->orWhere('ip_address', 'like', '%' . $request->search . '%')
                   ->orWhere('serial_number', 'like', '%' . $request->search . '%');
             });
-        }
-
-        if ($request->has('department_id')) {
-            $query->where('department_id', $request->department_id);
         }
 
         $computers = $query->paginate($request->get('per_page', 15));
@@ -80,11 +87,33 @@ class ComputerController extends Controller
 
     public function show(Computer $computer)
     {
+        $user = auth()->user();
+        
+        // Check department access
+        if (!$user->hasRole('super-admin') && !$user->can('view all departments')) {
+            if (!$user->department_id || $computer->department_id !== $user->department_id) {
+                return response()->json([
+                    'message' => 'Access denied. You can only view computers from your own department.'
+                ], 403);
+            }
+        }
+        
         return new ComputerResource($computer->load(['borrowings', 'assetSerial.asset', 'peripherals.assetSerialNumber.asset.category']));
     }
 
     public function update(Request $request, Computer $computer)
     {
+        $user = auth()->user();
+        
+        // Check department access
+        if (!$user->hasRole('super-admin') && !$user->can('view all departments')) {
+            if (!$user->department_id || $computer->department_id !== $user->department_id) {
+                return response()->json([
+                    'message' => 'Access denied. You can only update computers from your own department.'
+                ], 403);
+            }
+        }
+        
         $validated = $request->validate([
             'hostname' => 'required|string|unique:computers,hostname,' . $computer->id,
             'manufacturer' => 'nullable|string',
@@ -121,6 +150,17 @@ class ComputerController extends Controller
 
     public function destroy(Computer $computer)
     {
+        $user = auth()->user();
+        
+        // Check department access
+        if (!$user->hasRole('super-admin') && !$user->can('view all departments')) {
+            if (!$user->department_id || $computer->department_id !== $user->department_id) {
+                return response()->json([
+                    'message' => 'Access denied. You can only delete computers from your own department.'
+                ], 403);
+            }
+        }
+        
         // Audit log before deletion
         $this->logDeleted('computers', $computer);
         
@@ -136,37 +176,62 @@ class ComputerController extends Controller
     {
         $validated = $request->validate([
             'hostname' => 'required|string',
+            'department_id' => 'nullable|integer',
             'manufacturer' => 'nullable|string',
             'model' => 'nullable|string',
             'serial_number' => 'nullable|string',
+            // Support both old and new OS field formats
             'os' => 'nullable|string',
+            'os_name' => 'nullable|string',
+            'os_version' => 'nullable|string',
+            'os_build' => 'nullable|string',
+            // Support both old and new CPU field formats
             'cpu' => 'nullable|string',
+            'cpu_name' => 'nullable|string',
+            'cpu_cores_physical' => 'nullable|integer',
+            'cpu_cores_logical' => 'nullable|integer',
+            'cpu_speed_mhz' => 'nullable|integer',
             'ram_gb' => 'nullable|numeric',
             'disks' => 'nullable|array',
             'disks.*.model' => 'nullable|string',
             'disks.*.size_gb' => 'nullable|numeric',
             'gpus' => 'nullable|array',
+            // Support both old and new IP field formats
             'ip' => 'nullable|string',
+            'ip_address' => 'nullable|string',
+            'mac_address' => 'nullable|string',
             'installed_software' => 'nullable|array',
             'installed_software.*.name' => 'nullable|string',
             'installed_software.*.version' => 'nullable|string',
+            'discovered_via' => 'nullable|string',
+            'last_seen' => 'nullable|string',
+            'notes' => 'nullable|string',
         ]);
 
         // Map the incoming JSON structure to database fields
         $computerData = [
             'hostname' => $validated['hostname'],
+            'department_id' => $validated['department_id'] ?? null,
             'manufacturer' => $validated['manufacturer'] ?? null,
             'model' => $validated['model'] ?? null,
             'serial_number' => $validated['serial_number'] ?? null,
-            'os_name' => $validated['os'] ?? null,
-            'cpu_name' => $validated['cpu'] ?? null,
+            // Prefer new format, fallback to old format
+            'os_name' => $validated['os_name'] ?? $validated['os'] ?? null,
+            'os_version' => $validated['os_version'] ?? null,
+            'os_build' => $validated['os_build'] ?? null,
+            'cpu_name' => $validated['cpu_name'] ?? $validated['cpu'] ?? null,
+            'cpu_cores_physical' => $validated['cpu_cores_physical'] ?? null,
+            'cpu_cores_logical' => $validated['cpu_cores_logical'] ?? null,
+            'cpu_speed_mhz' => $validated['cpu_speed_mhz'] ?? null,
             'ram_gb' => $validated['ram_gb'] ?? null,
             'disks' => $validated['disks'] ?? null,
             'gpus' => $validated['gpus'] ?? null,
-            'ip_address' => $validated['ip'] ?? null,
+            'ip_address' => $validated['ip_address'] ?? $validated['ip'] ?? null,
+            'mac_address' => $validated['mac_address'] ?? null,
             'installed_software' => $validated['installed_software'] ?? null,
-            'discovered_via' => 'python_client',
-            'last_seen' => now(),
+            'discovered_via' => $validated['discovered_via'] ?? 'inventory_client_script',
+            'last_seen' => $validated['last_seen'] ? now()->parse($validated['last_seen']) : now(),
+            'notes' => $validated['notes'] ?? null,
         ];
 
         // Update or create computer record
@@ -201,6 +266,7 @@ class ComputerController extends Controller
                     ['serial_number' => $validated['serial_number']],
                     [
                         'asset_id' => $asset->id,
+                        'asset_tag' => $this->generateAssetTag($validated['serial_number']),
                         'condition' => 'good',
                         'assigned_to' => $validated['hostname'] ?? null,
                         'notes' => sprintf(
@@ -257,5 +323,31 @@ class ComputerController extends Controller
         $peripheral->delete();
 
         return response()->json(['message' => 'Peripheral detached successfully']);
+    }
+
+    /**
+     * Generate a unique asset tag based on serial number or other criteria
+     */
+    private function generateAssetTag($serialNumber)
+    {
+        // Check if asset tag already exists for this serial number
+        $existingAssetSerial = AssetSerialNumber::where('serial_number', $serialNumber)->first();
+        if ($existingAssetSerial && $existingAssetSerial->asset_tag) {
+            return $existingAssetSerial->asset_tag;
+        }
+
+        // Generate asset tag: COMP- + last 8 characters of serial number (or full if shorter)
+        $suffix = strlen($serialNumber) > 8 ? substr($serialNumber, -8) : $serialNumber;
+        $baseTag = 'COMP-' . strtoupper($suffix);
+        
+        // Ensure uniqueness
+        $counter = 1;
+        $assetTag = $baseTag;
+        while (AssetSerialNumber::where('asset_tag', $assetTag)->exists()) {
+            $assetTag = $baseTag . '-' . $counter;
+            $counter++;
+        }
+        
+        return $assetTag;
     }
 }

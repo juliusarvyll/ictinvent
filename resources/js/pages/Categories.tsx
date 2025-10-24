@@ -1,10 +1,18 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   Dialog,
   DialogContent,
@@ -30,16 +38,27 @@ interface Category {
   name: string;
   description: string;
   is_peripheral: boolean;
+  department_id: number | null;
+  department?: { id: number; name: string };
 }
 
 export default function Categories() {
+  const { isSuperAdmin } = useAuth();
   const [open, setOpen] = useState(false);
   const [viewOpen, setViewOpen] = useState(false);
   const [viewing, setViewing] = useState<Category | null>(null);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
-  const [formData, setFormData] = useState({ name: '', description: '', is_peripheral: false });
+  const [formData, setFormData] = useState({ name: '', description: '', is_peripheral: false, department_id: '' });
   const [search, setSearch] = useState('');
   const queryClient = useQueryClient();
+
+  const { data: departments } = useQuery({
+    queryKey: ['departments'],
+    queryFn: async () => {
+      const response = await api.get('/departments');
+      return response.data;
+    },
+  });
 
   const { data, isLoading } = useQuery({
     queryKey: ['categories', search],
@@ -82,7 +101,7 @@ export default function Categories() {
   });
 
   const resetForm = () => {
-    setFormData({ name: '', description: '', is_peripheral: false });
+    setFormData({ name: '', description: '', is_peripheral: false, department_id: '' });
     setEditingCategory(null);
   };
 
@@ -97,7 +116,12 @@ export default function Categories() {
 
   const handleEdit = (category: Category) => {
     setEditingCategory(category);
-    setFormData({ name: category.name, description: category.description, is_peripheral: category.is_peripheral || false });
+    setFormData({ 
+      name: category.name, 
+      description: category.description, 
+      is_peripheral: category.is_peripheral || false,
+      department_id: category.department_id?.toString() || ''
+    });
     setOpen(true);
   };
 
@@ -147,6 +171,29 @@ export default function Categories() {
                   }
                 />
               </div>
+              {isSuperAdmin() && (
+                <div>
+                  <Label htmlFor="department_id">Department (Optional)</Label>
+                  <Select
+                    value={formData.department_id || 'none'}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, department_id: value === 'none' ? '' : value })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select department" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">None</SelectItem>
+                      {departments?.data?.map((dept: any) => (
+                        <SelectItem key={dept.id} value={dept.id.toString()}>
+                          {dept.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
               <div className="flex items-center space-x-2">
                 <Checkbox
                   id="is_peripheral"
@@ -182,6 +229,9 @@ export default function Categories() {
             <TableRow>
               <TableHead className="min-w-[150px]">Name</TableHead>
               <TableHead className="min-w-[200px] hidden md:table-cell">Description</TableHead>
+              {isSuperAdmin() && (
+                <TableHead className="min-w-[120px] hidden sm:table-cell">Department</TableHead>
+              )}
               <TableHead className="min-w-[120px] hidden lg:table-cell">Type</TableHead>
               <TableHead className="text-right min-w-[100px]">Actions</TableHead>
             </TableRow>
@@ -189,13 +239,13 @@ export default function Categories() {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={4} className="text-center">
+                <TableCell colSpan={isSuperAdmin() ? 5 : 4} className="text-center">
                   Loading...
                 </TableCell>
               </TableRow>
             ) : data?.data?.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={4} className="text-center">
+                <TableCell colSpan={isSuperAdmin() ? 5 : 4} className="text-center">
                   No categories found
                 </TableCell>
               </TableRow>
@@ -204,6 +254,15 @@ export default function Categories() {
                 <TableRow key={category.id}>
                   <TableCell className="font-medium">{category.name}</TableCell>
                   <TableCell className="hidden md:table-cell">{category.description}</TableCell>
+                  {isSuperAdmin() && (
+                    <TableCell className="hidden sm:table-cell">
+                      {category.department ? (
+                        <span className="text-sm">{category.department.name}</span>
+                      ) : (
+                        <span className="text-sm text-muted-foreground">—</span>
+                      )}
+                    </TableCell>
+                  )}
                   <TableCell className="hidden lg:table-cell">
                     {category.is_peripheral ? (
                       <Badge variant="secondary" className="gap-1">
@@ -260,6 +319,12 @@ export default function Categories() {
                 <Label className="text-muted-foreground">Description</Label>
                 <p className="mt-1 rounded-lg border p-3">{viewing.description || 'No description'}</p>
               </div>
+              {isSuperAdmin() && (
+                <div>
+                  <Label className="text-muted-foreground">Department</Label>
+                  <p className="mt-1">{viewing.department?.name || 'Not assigned'}</p>
+                </div>
+              )}
               <div>
                 <Label className="text-muted-foreground">Type</Label>
                 <div className="mt-1">

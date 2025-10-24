@@ -42,6 +42,7 @@ class ComputerResource extends JsonResource
                 return [
                     'id' => $this->assetSerial->id,
                     'serial_number' => $this->assetSerial->serial_number,
+                    'asset_tag' => $this->assetSerial->asset_tag,
                     'asset_id' => $this->assetSerial->asset_id,
                     'asset_name' => $this->assetSerial->asset->name ?? null,
                     'condition' => $this->assetSerial->condition,

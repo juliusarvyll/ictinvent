@@ -14,6 +14,8 @@ class CategoryResource extends JsonResource
             'name' => $this->name,
             'description' => $this->description,
             'is_peripheral' => $this->is_peripheral,
+            'department_id' => $this->department_id,
+            'department' => new DepartmentResource($this->whenLoaded('department')),
             'assets_count' => $this->whenCounted('assets'),
             'assets' => AssetResource::collection($this->whenLoaded('assets')),
             'created_at' => $this->created_at,

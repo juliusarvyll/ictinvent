@@ -25,6 +25,7 @@ interface AuthContextType {
   isLoading: boolean;
   hasPermission: (permission: string) => boolean;
   hasAnyPermission: (permissions: string[]) => boolean;
+  isSuperAdmin: () => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -127,8 +128,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return permissions.some(permission => allPermissions.includes(permission));
   };
 
+  const isSuperAdmin = (): boolean => {
+    if (!user) return false;
+    return user.roles?.some(role => role.name === 'Super Admin') || false;
+  };
+
   return (
-    <AuthContext.Provider value={{ user, token, login, register, logout, isLoading, hasPermission, hasAnyPermission }}>
+    <AuthContext.Provider value={{ user, token, login, register, logout, isLoading, hasPermission, hasAnyPermission, isSuperAdmin }}>
       {children}
     </AuthContext.Provider>
   );

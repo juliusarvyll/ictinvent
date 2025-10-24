@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\ComputerController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\AuditLogController;
 use App\Http\Controllers\Api\DepartmentController;
+use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\UserController;
 use Illuminate\Support\Facades\Route;
@@ -45,11 +46,11 @@ Route::middleware('auth:sanctum')->group(function () {
     // Asset Serial Numbers - require view assets permission
     Route::apiResource('asset-serial-numbers', AssetSerialNumberController::class)->middleware('permission:view assets');
 
-    // Computers - require view computers permission
-    Route::apiResource('computers', ComputerController::class)->middleware('permission:view computers');
+    // Computers - require view computers permission with department access control
+    Route::apiResource('computers', ComputerController::class)->middleware(['permission:view computers', 'department']);
     Route::post('/inventory/computers', [ComputerController::class, 'store']); // Special endpoint for hardware discovery
-    Route::post('computers/{computer}/peripherals', [ComputerController::class, 'attachPeripheral'])->middleware('permission:update computers');
-    Route::delete('computers/{computer}/peripherals/{peripheral}', [ComputerController::class, 'detachPeripheral'])->middleware('permission:update computers');
+    Route::post('computers/{computer}/peripherals', [ComputerController::class, 'attachPeripheral'])->middleware(['permission:update computers', 'department']);
+    Route::delete('computers/{computer}/peripherals/{peripheral}', [ComputerController::class, 'detachPeripheral'])->middleware(['permission:update computers', 'department']);
 
     // Borrowings - require view borrowings permission
     Route::apiResource('borrowings', BorrowingController::class)->middleware('permission:view borrowings');
@@ -73,4 +74,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('audit-logs', [AuditLogController::class, 'index'])->middleware('permission:view logs');
     Route::get('audit-logs/modules', [AuditLogController::class, 'modules'])->middleware('permission:view logs');
     Route::get('audit-logs/actions', [AuditLogController::class, 'actions'])->middleware('permission:view logs');
+    
+    // Reports - require view reports permission
+    Route::get('reports/types', [ReportController::class, 'types'])->middleware('permission:view reports');
+    Route::get('reports/inventory', [ReportController::class, 'assetInventory'])->middleware('permission:view reports');
+    Route::get('reports/valuation', [ReportController::class, 'assetValuation'])->middleware('permission:view reports');
+    Route::get('reports/borrowings', [ReportController::class, 'borrowings'])->middleware('permission:view reports');
+    Route::get('reports/maintenance', [ReportController::class, 'maintenance'])->middleware('permission:view reports');
+    Route::get('reports/low-stock', [ReportController::class, 'lowStock'])->middleware('permission:view reports');
+    Route::get('reports/lifecycle', [ReportController::class, 'lifecycle'])->middleware('permission:view reports');
+    Route::get('reports/{type}/export-pdf', [ReportController::class, 'exportPdf'])->middleware('permission:export reports');
 });

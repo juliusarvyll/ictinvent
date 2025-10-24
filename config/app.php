@@ -43,6 +43,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Network Request Logging
+    |--------------------------------------------------------------------------
+    |
+    | When enabled, API requests will be logged for debugging purposes.
+    | Disable in production for security and performance.
+    |
+    */
+
+    'log_api_requests' => env('LOG_API_REQUESTS', false),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application URL
     |--------------------------------------------------------------------------
     |

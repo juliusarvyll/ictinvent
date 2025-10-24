@@ -16,8 +16,17 @@ class DashboardController extends Controller
     public function analytics(Request $request)
     {
         $user = auth()->user();
-        $isDepartmentUser = $user && !$user->hasAnyRole(['Super Admin', 'Admin']);
-        $departmentId = $isDepartmentUser ? $user->department_id : null;
+        
+        // Determine if user should see only their department's data
+        $departmentId = null;
+        if (!$user->hasRole('super-admin') && !$user->can('view all departments')) {
+            $departmentId = $user->department_id;
+        }
+        
+        // Allow admins to filter by specific department if requested
+        if (($user->hasRole('super-admin') || $user->can('view all departments')) && $request->has('department_id')) {
+            $departmentId = $request->department_id;
+        }
 
         // Total counts
         $totalAssets = $this->getAssetCount($departmentId);
@@ -38,7 +47,7 @@ class DashboardController extends Controller
         $recentBorrowings = $this->getRecentBorrowings($departmentId);
 
         // Assets by department (for admins)
-        $assetsByDepartment = !$isDepartmentUser ? $this->getAssetsByDepartment() : null;
+        $assetsByDepartment = ($user->hasRole('super-admin') || $user->can('view all departments')) ? $this->getAssetsByDepartment() : null;
 
         // Low stock alerts
         $lowStockAssets = $this->getLowStockAssets($departmentId);
@@ -144,19 +153,19 @@ class DashboardController extends Controller
 
     private function getAssetsByCategory($departmentId = null)
     {
-        $query = Asset::with('category')
-            ->select('category_id', DB::raw('SUM(quantity) as count'))
-            ->groupBy('category_id')
+        $query = Asset::join('categories', 'assets.category_id', '=', 'categories.id')
+            ->select('categories.name as category_name', DB::raw('SUM(assets.quantity) as count'))
+            ->groupBy('categories.id', 'categories.name')
             ->orderByDesc('count')
             ->limit(5);
         
         if ($departmentId) {
-            $query->where('department_id', $departmentId);
+            $query->where('assets.department_id', $departmentId);
         }
 
         return $query->get()->map(function ($item) {
             return [
-                'category' => $item->category->name ?? 'Unknown',
+                'category' => $item->category_name ?? 'Unknown',
                 'count' => (int) $item->count,
             ];
         });
@@ -164,15 +173,15 @@ class DashboardController extends Controller
 
     private function getAssetsByDepartment()
     {
-        return Asset::with('department')
-            ->select('department_id', DB::raw('SUM(quantity) as count'))
-            ->whereNotNull('department_id')
-            ->groupBy('department_id')
+        return Asset::join('departments', 'assets.department_id', '=', 'departments.id')
+            ->select('departments.name as department_name', DB::raw('SUM(assets.quantity) as count'))
+            ->whereNotNull('assets.department_id')
+            ->groupBy('departments.id', 'departments.name')
             ->orderByDesc('count')
             ->get()
             ->map(function ($item) {
                 return [
-                    'department' => $item->department->name ?? 'Unknown',
+                    'department' => $item->department_name ?? 'Unknown',
                     'count' => (int) $item->count,
                 ];
             });
