@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\AuditLogController;
 use App\Http\Controllers\Api\DepartmentController;
 use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\RoleController;
+use App\Http\Controllers\Api\SystemSettingsController;
 use App\Http\Controllers\Api\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -84,4 +85,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('reports/low-stock', [ReportController::class, 'lowStock'])->middleware('permission:view reports');
     Route::get('reports/lifecycle', [ReportController::class, 'lifecycle'])->middleware('permission:view reports');
     Route::get('reports/{type}/export-pdf', [ReportController::class, 'exportPdf'])->middleware('permission:export reports');
+    
+    // System Settings - Super Admin only (uses Gate::before in AppServiceProvider)
+    Route::prefix('system-settings')->middleware('role:Super Admin')->group(function () {
+        Route::get('/', [SystemSettingsController::class, 'index']);
+        Route::get('/{key}', [SystemSettingsController::class, 'show']);
+        Route::put('/{key}', [SystemSettingsController::class, 'update']);
+        Route::delete('/{key}', [SystemSettingsController::class, 'destroy']);
+        Route::post('/test-groq', [SystemSettingsController::class, 'testGroqConnection']);
+    });
 });

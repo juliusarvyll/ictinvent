@@ -17,6 +17,7 @@
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.10.1",
         "laravel/wayfinder": "^0.1.9",
+        "silviolleite/laravelpwa": "^2.0",
         "spatie/laravel-permission": "^6.21"
     },
     "require-dev": {

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\SystemSetting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -15,11 +16,12 @@ class BarcodeScanController extends Controller
             'image' => 'required|string', // base64 encoded image
         ]);
 
-        $apiKey = config('services.groq.api_key');
+        // Try to get API key from database first, then fall back to config
+        $apiKey = SystemSetting::get('groq_api_key') ?? config('services.groq.api_key');
 
         if (!$apiKey) {
             return response()->json([
-                'error' => 'Groq API key not configured. Please set GROQ_API_KEY in .env file.'
+                'error' => 'Groq API key not configured. Please contact your administrator to set the API key in system settings.'
             ], 500);
         }
 

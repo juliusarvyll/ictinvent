@@ -67,6 +67,7 @@ class DatabaseSeeder extends Seeder
             AssetSerialNumberSeeder::class,
             ComputerSeeder::class,
             RolePermissionSeeder::class,
+            SystemSettingsSeeder::class,
         ]);
     }
 }
