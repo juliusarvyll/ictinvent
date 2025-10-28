@@ -12,6 +12,7 @@ import {
   LogOut,
   Menu,
   BarChart3,
+  Settings,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
@@ -39,6 +40,7 @@ export default function Layout() {
     { icon: Users, label: 'Users', path: '/users', permission: 'view users' },
     { icon: Shield, label: 'Roles', path: '/roles', permission: 'view users' },
     { icon: FileText, label: 'Audit Logs', path: '/audit-logs', permission: 'view logs' },
+    { icon: Settings, label: 'System Settings', path: '/system-settings', permission: 'view system settings' },
   ];
 
   // Filter menu items based on user permissions

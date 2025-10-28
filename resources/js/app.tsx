@@ -7,7 +7,6 @@ import { Toaster } from 'sonner';
 
 // Pages
 import Login from './pages/Login';
-import Dashboard from './pages/Dashboard';
 import Categories from './pages/Categories';
 import Assets from './pages/Assets';
 import AssetDetails from './pages/AssetDetails';
@@ -23,6 +22,7 @@ import AuditLogs from './pages/AuditLogs';
 import Departments from './pages/Departments';
 import Layout from './components/Layout';
 import PermissionGuard from './components/PermissionGuard';
+import SystemSettings from './pages/SystemSettings';
 
 const queryClient = new QueryClient();
 
@@ -55,7 +55,6 @@ function App() {
                 </ProtectedRoute>
               }
             >
-              <Route index element={<Dashboard />} />
               <Route path="departments" element={<PermissionGuard permission="view departments"><Departments /></PermissionGuard>} />
               <Route path="categories" element={<PermissionGuard permission="view categories"><Categories /></PermissionGuard>} />
               <Route path="assets" element={<PermissionGuard permission="view assets"><Assets /></PermissionGuard>} />
@@ -69,6 +68,7 @@ function App() {
               <Route path="users" element={<PermissionGuard permission="view users"><Users /></PermissionGuard>} />
               <Route path="roles" element={<PermissionGuard permission="view users"><Roles /></PermissionGuard>} />
               <Route path="audit-logs" element={<PermissionGuard permission="view logs"><AuditLogs /></PermissionGuard>} />
+              <Route path="system-settings" element={<PermissionGuard permission="view system settings"><SystemSettings /></PermissionGuard>} />
             </Route>
           </Routes>
           <Toaster />

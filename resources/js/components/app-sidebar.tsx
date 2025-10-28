@@ -10,7 +10,6 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import { dashboard } from '@/routes';
 import { type NavItem, type SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
 import { BookOpen, Folder, LayoutGrid, Settings } from 'lucide-react';
@@ -31,14 +30,19 @@ const footerNavItems: NavItem[] = [
 
 export function AppSidebar() {
     const { auth } = usePage<SharedData>().props;
-    const isSuperAdmin = auth.user.roles?.some((role: any) => role.name === 'Super Admin');
+    
+    // Debug: Log user data to console
+    console.log('Auth user data:', auth?.user);
+    console.log('User roles:', auth?.user?.roles);
+    
+    // Check if user has Super Admin role
+    const isSuperAdmin = auth?.user?.roles && Array.isArray(auth.user.roles) 
+        ? auth.user.roles.some((role: any) => role.name === 'Super Admin')
+        : false;
+    
+    console.log('Is Super Admin:', isSuperAdmin);
 
     const mainNavItems: NavItem[] = [
-        {
-            title: 'Dashboard',
-            href: dashboard(),
-            icon: LayoutGrid,
-        },
         ...(isSuperAdmin ? [{
             title: 'System Settings',
             href: '/system-settings',
@@ -52,9 +56,6 @@ export function AppSidebar() {
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild>
-                            <Link href={dashboard()} prefetch>
-                                <AppLogo />
-                            </Link>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                 </SidebarMenu>

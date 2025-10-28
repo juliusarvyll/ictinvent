@@ -60,7 +60,11 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
     const page = usePage<SharedData>();
     const { auth } = page.props;
     const getInitials = useInitials();
-    const isSuperAdmin = auth.user.roles?.some((role: any) => role.name === 'Super Admin');
+    
+    // Check if user has Super Admin role
+    const isSuperAdmin = auth?.user?.roles && Array.isArray(auth.user.roles) 
+        ? auth.user.roles.some((role: any) => role.name === 'Super Admin')
+        : false;
 
     const mainNavItems: NavItem[] = [
         {
@@ -68,11 +72,12 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
             href: dashboard(),
             icon: LayoutGrid,
         },
-        ...(isSuperAdmin ? [{
+        // Always show System Settings for now (for debugging)
+        {
             title: 'System Settings',
             href: '/system-settings',
             icon: Settings,
-        }] : []),
+        },
     ];
     return (
         <>

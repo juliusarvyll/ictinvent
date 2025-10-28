@@ -11,16 +11,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Plus, Pencil, Trash2, Key, CheckCircle, XCircle, Loader2, Lock, Settings } from 'lucide-react';
 import { toast } from 'sonner';
-import AppLayout from '@/layouts/app-layout';
-import { Head } from '@inertiajs/react';
-import { type BreadcrumbItem } from '@/types';
-
-const breadcrumbs: BreadcrumbItem[] = [
-    {
-        title: 'System Settings',
-        href: '/system-settings',
-    },
-];
 
 interface SystemSetting {
     id: number;
@@ -150,167 +140,163 @@ export default function SystemSettings() {
     };
 
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="System Settings" />
-
-            <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h1 className="text-3xl font-bold tracking-tight">System Settings</h1>
-                        <p className="text-muted-foreground">
-                            Manage system-wide configuration and API keys
-                        </p>
-                    </div>
-                    <div className="flex gap-2">
-                        <Button
-                            onClick={() => setTestDialogOpen(true)}
-                            variant="outline"
-                        >
-                            <Key className="mr-2 h-4 w-4" />
-                            Test Groq API
-                        </Button>
-                        <Button onClick={handleQuickUpdateGroq}>
-                            <Plus className="mr-2 h-4 w-4" />
-                            Update Groq API Key
-                        </Button>
-                    </div>
+        <div className="space-y-6">
+            <div className="flex items-center justify-between">
+                <div>
+                    <h1 className="text-3xl font-bold tracking-tight">System Settings</h1>
+                    <p className="text-muted-foreground">
+                        Manage system-wide configuration and API keys
+                    </p>
                 </div>
-
-                {/* Groq API Key Card */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <Key className="h-5 w-5" />
-                            Groq API Configuration
-                        </CardTitle>
-                        <CardDescription>
-                            Configure the Groq API key for AI-powered barcode scanning
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        {settings?.find(s => s.key === 'groq_api_key') ? (
-                            <div className="flex items-center justify-between">
-                                <div className="space-y-1">
-                                    <p className="text-sm font-medium">API Key Status</p>
-                                    <div className="flex items-center gap-2">
-                                        <Badge variant="outline" className="gap-1">
-                                            <Lock className="h-3 w-3" />
-                                            Configured (Encrypted)
-                                        </Badge>
-                                        <span className="text-xs text-muted-foreground">
-                                            Last updated: {new Date(settings.find(s => s.key === 'groq_api_key')!.updated_at).toLocaleDateString()}
-                                        </span>
-                                    </div>
-                                </div>
-                                <Button
-                                    onClick={() => handleEdit(settings.find(s => s.key === 'groq_api_key')!)}
-                                    variant="outline"
-                                    size="sm"
-                                >
-                                    <Pencil className="mr-2 h-4 w-4" />
-                                    Update Key
-                                </Button>
-                            </div>
-                        ) : (
-                            <div className="flex items-center justify-between">
-                                <div className="space-y-1">
-                                    <p className="text-sm font-medium text-muted-foreground">No API key configured</p>
-                                    <p className="text-xs text-muted-foreground">
-                                        Add a Groq API key to enable barcode scanning features
-                                    </p>
-                                </div>
-                                <Button onClick={handleQuickUpdateGroq} size="sm">
-                                    <Plus className="mr-2 h-4 w-4" />
-                                    Add API Key
-                                </Button>
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
-
-                {/* All Settings Table */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <Settings className="h-5 w-5" />
-                            All System Settings
-                        </CardTitle>
-                        <CardDescription>
-                            View and manage all system configuration settings
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        {isLoading ? (
-                            <div className="flex items-center justify-center py-8">
-                                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                            </div>
-                        ) : settings && settings.length > 0 ? (
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Key</TableHead>
-                                        <TableHead>Description</TableHead>
-                                        <TableHead>Type</TableHead>
-                                        <TableHead>Security</TableHead>
-                                        <TableHead>Last Updated</TableHead>
-                                        <TableHead className="text-right">Actions</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {settings.map((setting) => (
-                                        <TableRow key={setting.id}>
-                                            <TableCell className="font-mono text-sm">
-                                                {setting.key}
-                                            </TableCell>
-                                            <TableCell className="text-sm text-muted-foreground">
-                                                {setting.description || '-'}
-                                            </TableCell>
-                                            <TableCell>
-                                                <Badge variant="secondary">{setting.type}</Badge>
-                                            </TableCell>
-                                            <TableCell>
-                                                {setting.is_encrypted ? (
-                                                    <Badge variant="outline" className="gap-1">
-                                                        <Lock className="h-3 w-3" />
-                                                        Encrypted
-                                                    </Badge>
-                                                ) : (
-                                                    <Badge variant="secondary">Plain</Badge>
-                                                )}
-                                            </TableCell>
-                                            <TableCell className="text-sm text-muted-foreground">
-                                                {new Date(setting.updated_at).toLocaleDateString()}
-                                            </TableCell>
-                                            <TableCell className="text-right">
-                                                <div className="flex justify-end gap-2">
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        onClick={() => handleEdit(setting)}
-                                                    >
-                                                        <Pencil className="h-4 w-4" />
-                                                    </Button>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        onClick={() => handleDelete(setting.key)}
-                                                    >
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </Button>
-                                                </div>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        ) : (
-                            <div className="text-center py-8 text-muted-foreground">
-                                No settings configured yet
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
+                <div className="flex gap-2">
+                    <Button
+                        onClick={() => setTestDialogOpen(true)}
+                        variant="outline"
+                    >
+                        <Key className="mr-2 h-4 w-4" />
+                        Test Groq API
+                    </Button>
+                    <Button onClick={handleQuickUpdateGroq}>
+                        <Plus className="mr-2 h-4 w-4" />
+                        Update Groq API Key
+                    </Button>
+                </div>
             </div>
+
+            {/* Groq API Key Card */}
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        <Key className="h-5 w-5" />
+                        Groq API Configuration
+                    </CardTitle>
+                    <CardDescription>
+                        Configure the Groq API key for AI-powered barcode scanning
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    {settings?.find(s => s.key === 'groq_api_key') ? (
+                        <div className="flex items-center justify-between">
+                            <div className="space-y-1">
+                                <p className="text-sm font-medium">API Key Status</p>
+                                <div className="flex items-center gap-2">
+                                    <Badge variant="outline" className="gap-1">
+                                        <Lock className="h-3 w-3" />
+                                        Configured (Encrypted)
+                                    </Badge>
+                                    <span className="text-xs text-muted-foreground">
+                                        Last updated: {new Date(settings.find(s => s.key === 'groq_api_key')!.updated_at).toLocaleDateString()}
+                                    </span>
+                                </div>
+                            </div>
+                            <Button
+                                onClick={() => handleEdit(settings.find(s => s.key === 'groq_api_key')!)}
+                                variant="outline"
+                                size="sm"
+                            >
+                                <Pencil className="mr-2 h-4 w-4" />
+                                Update Key
+                            </Button>
+                        </div>
+                    ) : (
+                        <div className="flex items-center justify-between">
+                            <div className="space-y-1">
+                                <p className="text-sm font-medium text-muted-foreground">No API key configured</p>
+                                <p className="text-xs text-muted-foreground">
+                                    Add a Groq API key to enable barcode scanning features
+                                </p>
+                            </div>
+                            <Button onClick={handleQuickUpdateGroq} size="sm">
+                                <Plus className="mr-2 h-4 w-4" />
+                                Add API Key
+                            </Button>
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+
+            {/* All Settings Table */}
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        <Settings className="h-5 w-5" />
+                        All System Settings
+                    </CardTitle>
+                    <CardDescription>
+                        View and manage all system configuration settings
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    {isLoading ? (
+                        <div className="flex items-center justify-center py-8">
+                            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                        </div>
+                    ) : settings && settings.length > 0 ? (
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Key</TableHead>
+                                    <TableHead>Description</TableHead>
+                                    <TableHead>Type</TableHead>
+                                    <TableHead>Security</TableHead>
+                                    <TableHead>Last Updated</TableHead>
+                                    <TableHead className="text-right">Actions</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {settings.map((setting) => (
+                                    <TableRow key={setting.id}>
+                                        <TableCell className="font-mono text-sm">
+                                            {setting.key}
+                                        </TableCell>
+                                        <TableCell className="text-sm text-muted-foreground">
+                                            {setting.description || '-'}
+                                        </TableCell>
+                                        <TableCell>
+                                            <Badge variant="secondary">{setting.type}</Badge>
+                                        </TableCell>
+                                        <TableCell>
+                                            {setting.is_encrypted ? (
+                                                <Badge variant="outline" className="gap-1">
+                                                    <Lock className="h-3 w-3" />
+                                                    Encrypted
+                                                </Badge>
+                                            ) : (
+                                                <Badge variant="secondary">Plain</Badge>
+                                            )}
+                                        </TableCell>
+                                        <TableCell className="text-sm text-muted-foreground">
+                                            {new Date(setting.updated_at).toLocaleDateString()}
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                            <div className="flex justify-end gap-2">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => handleEdit(setting)}
+                                                >
+                                                    <Pencil className="h-4 w-4" />
+                                                </Button>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => handleDelete(setting.key)}
+                                                >
+                                                    <Trash2 className="h-4 w-4" />
+                                                </Button>
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    ) : (
+                        <div className="text-center py-8 text-muted-foreground">
+                            No settings configured yet
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
 
             {/* Update/Create Dialog */}
             <Dialog open={open} onOpenChange={setOpen}>
@@ -449,6 +435,6 @@ export default function SystemSettings() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
-        </AppLayout>
+        </div>
     );
 }
