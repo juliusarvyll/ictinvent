@@ -102,6 +102,8 @@ class RolePermissionSeeder extends Seeder
             
             // System Settings
             'manage settings',
+            'manage system settings',
+            'view system settings',
             'manage notifications',
             'manage integrations',
         ];
