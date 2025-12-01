@@ -11,6 +11,20 @@ use Illuminate\Http\Request;
 class DepartmentController extends Controller
 {
     use LogsAudit;
+    
+    /**
+     * Public index method for inventory client (no authentication required)
+     * Returns simple list of departments with id and name only
+     */
+    public function publicIndex()
+    {
+        $departments = Department::select('id', 'name')->orderBy('name')->get();
+        
+        return response()->json([
+            'data' => $departments
+        ]);
+    }
+    
     public function index(Request $request)
     {
         $query = Department::query();

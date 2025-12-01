@@ -23,6 +23,9 @@ Route::post('/login', [AuthController::class, 'login']);
 // Inventory endpoint (public for Python client to send data)
 Route::post('/inventory/report', [ComputerController::class, 'receiveInventory']);
 
+// Public departments endpoint for inventory client
+Route::get('/inventory/departments', [DepartmentController::class, 'publicIndex']);
+
 // Protected routes
 Route::middleware('auth:sanctum')->group(function () {
     // Auth

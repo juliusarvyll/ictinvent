@@ -7,6 +7,7 @@ import { Toaster } from 'sonner';
 
 // Pages
 import Login from './pages/Login';
+import Dashboard from './pages/dashboard';
 import Categories from './pages/Categories';
 import Assets from './pages/Assets';
 import AssetDetails from './pages/AssetDetails';
@@ -55,6 +56,7 @@ function App() {
                 </ProtectedRoute>
               }
             >
+              <Route index element={<Dashboard />} />
               <Route path="departments" element={<PermissionGuard permission="view departments"><Departments /></PermissionGuard>} />
               <Route path="categories" element={<PermissionGuard permission="view categories"><Categories /></PermissionGuard>} />
               <Route path="assets" element={<PermissionGuard permission="view assets"><Assets /></PermissionGuard>} />

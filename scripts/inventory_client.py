@@ -135,6 +135,64 @@ def get_inventory():
     return info
 
 
+def fetch_departments_from_api(api_base_url):
+    """Fetch departments from the API."""
+    try:
+        departments_url = api_base_url.replace('/inventory/report', '/inventory/departments')
+        print(f"  Trying URL: {departments_url}")
+        response = requests.get(departments_url, timeout=10)
+        
+        print(f"  Response status: {response.status_code}")
+        print(f"  Response headers: {dict(response.headers)}")
+        
+        if response.status_code == 200:
+            # Check if response is actually JSON
+            content_type = response.headers.get('content-type', '')
+            print(f"  Content-Type: {content_type}")
+            
+            if 'application/json' not in content_type:
+                print(f"  Response is not JSON. Raw content: {response.text[:200]}...")
+                return None
+            
+            try:
+                departments_data = response.json()
+                print(f"  Raw JSON response: {json.dumps(departments_data, indent=2)}")
+                departments_dict = {}
+                
+                # Handle different response formats
+                if 'data' in departments_data:
+                    departments_list = departments_data['data']
+                    print(f"  Using 'data' field with {len(departments_list)} items")
+                else:
+                    departments_list = departments_data if isinstance(departments_data, list) else []
+                    print(f"  Using direct array with {len(departments_list)} items")
+                
+                for dept in departments_list:
+                    if isinstance(dept, dict) and 'id' in dept and 'name' in dept:
+                        departments_dict[dept['id']] = dept['name']
+                    else:
+                        print(f"  Skipping invalid department item: {dept}")
+                
+                print(f"✓ Successfully processed {len(departments_dict)} departments from API")
+                return departments_dict
+                
+            except json.JSONDecodeError as e:
+                print(f"  JSON decode error: {e}")
+                print(f"  Raw response content: {response.text}")
+                return None
+        else:
+            print(f"✗ Failed to fetch departments: HTTP {response.status_code}")
+            print(f"  Response content: {response.text}")
+            return None
+            
+    except requests.exceptions.RequestException as e:
+        print(f"✗ Error fetching departments from API: {e}")
+        return None
+    except Exception as e:
+        print(f"✗ Unexpected error fetching departments: {e}")
+        return None
+
+
 def display_available_departments(departments_dict):
     """Display all available departments for configuration reference."""
     print("\nAvailable Departments:")
@@ -251,30 +309,12 @@ if __name__ == "__main__":
     print("=" * 60)
     
     # Configuration
-    API_URL = "http://127.0.0.1:8000/api/inventory/report"  # Change this to your actual API URL
+    # API_URL = "http://127.0.0.1:8000/api/inventory/report"  # Local server for testing
+    API_URL = "https://inventory.spupict.com/api/inventory/report"  # Production server (needs deployment)
     DEBUG_MODE = False  # Set to True to see the complete data structure
     DRY_RUN = False  # Set to True to test data collection without sending to API
     SHOW_DEPARTMENTS = False  # Set to True to display available departments list
     PROMPT_FOR_DEPARTMENT = True  # Set to True to prompt user for department selection
-    
-    # Department Configuration
-    DEPARTMENTS = {
-        1: "IT Department",
-        2: "Human Resources",
-        3: "Finance Department", 
-        4: "Marketing Department",
-        5: "Operations Department",
-        6: "Sales Department",
-        7: "Administration",
-        8: "Research & Development"
-        # Add more departments as needed
-    }
-    
-    DEPARTMENT_ID = None  # Set this to the department ID for this computer/location
-    # Examples:
-    # DEPARTMENT_ID = 1  # IT Department
-    # DEPARTMENT_ID = 2  # Human Resources
-    # DEPARTMENT_ID = 3  # Finance Department
     
     # Alternative: Hostname-based department mapping
     HOSTNAME_DEPARTMENT_MAP = {
@@ -284,6 +324,19 @@ if __name__ == "__main__":
         # 'FIN-': 3,     # Hostnames starting with 'FIN-' go to Finance Department
         # 'MKT-': 4,     # Hostnames starting with 'MKT-' go to Marketing Department
     }
+    
+    # Fetch departments from API
+    print("\n[0/3] Fetching departments from server...")
+    DEPARTMENTS = fetch_departments_from_api(API_URL)
+    
+    if DEPARTMENTS is None:
+        print("✗ Failed to fetch departments from API. Please check:")
+        print("  1. The server is running and accessible")
+        print("  2. The API endpoint is deployed: /api/inventory/departments")
+        print("  3. Network connectivity is working")
+        print("  4. No firewall is blocking the request")
+        print("\nCannot continue without department information.")
+        exit(1)
     
     # Show available departments if requested
     if SHOW_DEPARTMENTS:
@@ -300,9 +353,9 @@ if __name__ == "__main__":
     print("\n[2/3] Preparing data...")
     print(f"  - Hostname: {inventory_data.get('hostname')}")
     
-    # Determine department ID with priority: hostname mapping > static config > user prompt
+    # Determine department ID with priority: hostname mapping > user prompt
     hostname = inventory_data.get('hostname')
-    final_department_id = get_department_id_from_hostname(hostname, HOSTNAME_DEPARTMENT_MAP, DEPARTMENT_ID)
+    final_department_id = get_department_id_from_hostname(hostname, HOSTNAME_DEPARTMENT_MAP)
     
     # If no department determined and prompting is enabled, ask user
     if final_department_id is None and PROMPT_FOR_DEPARTMENT:
@@ -318,10 +371,8 @@ if __name__ == "__main__":
                     hostname_detected = True
                     break
         
-        if hostname_detected and final_department_id != DEPARTMENT_ID:
+        if hostname_detected:
             print(f"  - Department: {final_department_id} - {dept_name} (auto-detected from hostname)")
-        elif final_department_id == DEPARTMENT_ID and not hostname_detected:
-            print(f"  - Department: {final_department_id} - {dept_name} (configured)")
         else:
             print(f"  - Department: {final_department_id} - {dept_name} (user selected)")
     else:
